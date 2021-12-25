@@ -7,13 +7,23 @@
 @implementation AppDelegate
 
 - (void)handleAppleEvent:(NSAppleEventDescriptor *)event withReplyEvent: (NSAppleEventDescriptor *)replyEvent {
-  // Get URL
-  NSString *fullUrl = [[event paramDescriptorForKeyword:keyDirectObject] stringValue];
-  // Strip vlc://
-  NSString *url = [fullUrl substringWithRange:NSMakeRange(6, [fullUrl length]-6)];
+  // Get input data
+  NSString *input = [[event paramDescriptorForKeyword:keyDirectObject] stringValue];
+  NSString *url;
+  if ([input hasPrefix:@"vlc://"]) {
+    url = [input substringFromIndex:6];
+  }
+  else if ([input hasPrefix:@"vlc:"]) {
+    url = [input substringFromIndex:4];
+  }
+  else {
+    // invalid input
+    [NSApp terminate:nil];
+    return;
+  }
 
   // Only allow urls starting with http:// or https://
-  if (!([url hasPrefix:@"http://"] || [url hasPrefix:@"https://"])) {
+  if (![url hasPrefix:@"http://"] && ![url hasPrefix:@"https://"]) {
     // protocol not allowed
     [NSApp terminate:nil];
     return;
@@ -50,13 +60,6 @@ int main() {
                                andSelector:@selector(handleAppleEvent:withReplyEvent:)
                              forEventClass:kInternetEventClass
                                 andEventID:kAEGetURL];
-
-  // I guess we need a window
-  NSWindow *window = [NSWindow alloc];
-  [window initWithContentRect:NSMakeRect(0, 0, 200, 200)
-                    styleMask:NSWindowStyleMaskTitled
-                      backing:NSBackingStoreBuffered
-                        defer:NO];
 
   [NSApp run];
   return 0;
